@@ -78,11 +78,11 @@ impl GP {
 
     fn generate_chromosome_recursive(&self, limit: u16, grow: bool) -> Node {
         let available_chromosomes = if grow {
-            self.config.chromosome_function.clone()
+            &self.config.chromosome_function
         } else if limit <= 1 {
-            self.config.chromosome_terminal.clone()
+            &self.config.chromosome_terminal
         } else {
-            self.config.chromosome_combined.clone()
+            &self.config.chromosome_combined
         };
         let max_action_index = available_chromosomes.len();
         let mut rng = rand::thread_rng();
@@ -144,18 +144,21 @@ impl GP {
     fn eval_tree(&self, chromosome: &Node, x: f64) -> f64 {
         match &chromosome.action {
             Action::Function(function_name) => {
-                let arg1 = &*chromosome.arg1.clone().unwrap();
-                let arg2 = &*chromosome.arg2.clone().unwrap();
-                match function_name.as_str() {
-                    "+" => self.eval_tree(arg1, x) + self.eval_tree(arg2, x),
-                    "-" => self.eval_tree(arg1, x) - self.eval_tree(arg2, x),
-                    "*" => self.eval_tree(arg1, x) * self.eval_tree(arg2, x),
-                    "/" => self.eval_tree(arg1, x) / self.eval_tree(arg2, x),
-                    "sin" => (self.eval_tree(arg1, x)).sin(),
-                    "cos" => (self.eval_tree(arg1, x)).cos(),
-                    "exp" => (self.eval_tree(arg1, x)).powf(self.eval_tree(&arg2, x)),
-                    _ => 9999999.0,
+                if let Some(arg1) = &chromosome.arg1 {
+                    if let Some(arg2) = &chromosome.arg2 {
+                        return match function_name.as_str() {
+                            "+" => self.eval_tree(arg1, x) + self.eval_tree(arg2, x),
+                            "-" => self.eval_tree(arg1, x) - self.eval_tree(arg2, x),
+                            "*" => self.eval_tree(arg1, x) * self.eval_tree(arg2, x),
+                            "/" => self.eval_tree(arg1, x) / self.eval_tree(arg2, x),
+                            "sin" => (self.eval_tree(arg1, x)).sin(),
+                            "cos" => (self.eval_tree(arg1, x)).cos(),
+                            "exp" => (self.eval_tree(arg1, x)).powf(self.eval_tree(&arg2, x)),
+                            _ => 9999999.0,
+                        };
+                    }
                 }
+                9999999.0
             }
             Action::Terminal(number) => *number,
             Action::X => x,
@@ -277,10 +280,7 @@ impl GP {
         let r: f64 = rng.gen();
 
         if r < 0.5 {
-            return choices
-                .get((choices.len() as f64 * rng.gen::<f64>()).floor() as usize)
-                .unwrap()
-                .clone();
+            return choices.remove((choices.len() as f64 * rng.gen::<f64>()).floor() as usize);
         }
         if self.config.fitness_order == "desc" {
             choices.sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
