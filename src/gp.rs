@@ -186,7 +186,13 @@ impl GP {
 
             //report best so far
             println!("Generation {}: ", gen);
-            println!("Best: {:?}", population.last());
+            if let Some(member) = population.last() {
+                println!(
+                    "Best ({}): {:?}",
+                    member.fitness,
+                    self.chromosome_to_string(&member.chromosome),
+                );
+            }
 
             let mut new_population: Vec<Member> = Vec::new();
             let mut i = 0;
@@ -247,7 +253,13 @@ impl GP {
         }
         println!("RUN COMPLETED ======================");
         println!("Generations: {}", gen);
-        println!("Best: {:?}", population.last());
+        if let Some(member) = population.last() {
+            println!(
+                "Best ({}): {:?}",
+                member.fitness,
+                self.chromosome_to_string(&member.chromosome),
+            );
+        }
         println!("Fitness Evaluations: {}", self.fitness_evaluations);
     }
 
@@ -367,5 +379,52 @@ impl GP {
             }
         }
         1
+    }
+
+    fn chromosome_to_string(&self, chromosome: &Node) -> String {
+        match &chromosome.action {
+            Action::Function(function_name) => {
+                if let Some(arg1) = &chromosome.arg1 {
+                    if let Some(arg2) = &chromosome.arg2 {
+                        return match function_name.as_str() {
+                            "+" => format!(
+                                "({} + {})",
+                                self.chromosome_to_string(arg1),
+                                self.chromosome_to_string(arg2)
+                            ),
+                            "-" => format!(
+                                "({} - {})",
+                                self.chromosome_to_string(arg1),
+                                self.chromosome_to_string(arg2)
+                            ),
+                            "*" => format!(
+                                "({} * {})",
+                                self.chromosome_to_string(arg1),
+                                self.chromosome_to_string(arg2)
+                            ),
+                            "/" => format!(
+                                "({} / {})",
+                                self.chromosome_to_string(arg1),
+                                self.chromosome_to_string(arg2)
+                            ),
+                            "sin" => format!("sin({})", self.chromosome_to_string(arg1)),
+
+                            "cos" => format!("cos({})", self.chromosome_to_string(arg1)),
+
+                            "exp" => format!(
+                                "exp({}, {})",
+                                self.chromosome_to_string(arg1),
+                                self.chromosome_to_string(arg2)
+                            ),
+
+                            _ => "".to_string(),
+                        };
+                    }
+                }
+                "(error)".to_string()
+            }
+            Action::Terminal(number) => number.to_string(),
+            Action::X => "x".to_string(),
+        }
     }
 }
