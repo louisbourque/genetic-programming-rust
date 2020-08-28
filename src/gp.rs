@@ -268,26 +268,28 @@ impl GP {
 
     fn select_from_population(&self, population: &[Member]) -> Member {
         let mut rng = rand::thread_rng();
-        let mut choices: Vec<Member> = Vec::new();
+        let mut choices: Vec<&Member> = Vec::new();
         let max_population_index = population.len();
         for _ in 0..6 {
             if let Some(member) =
                 population.get((max_population_index as f64 * rng.gen::<f64>()).floor() as usize)
             {
-                choices.push(member.clone());
+                choices.push(member);
             }
         }
         let r: f64 = rng.gen();
 
         if r < 0.5 {
-            return choices.remove((choices.len() as f64 * rng.gen::<f64>()).floor() as usize);
+            return choices
+                .remove((choices.len() as f64 * rng.gen::<f64>()).floor() as usize)
+                .clone();
         }
         if self.config.fitness_order == "desc" {
             choices.sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
         } else {
             choices.sort_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap());
         }
-        choices.pop().unwrap()
+        choices.pop().unwrap().clone()
     }
 
     fn crossover_function(&self, parent1: &Node, parent2: &Node) -> Node {
@@ -301,7 +303,7 @@ impl GP {
         new_parent
     }
 
-    fn pick_node<'a>(&self, node: &'a Node) -> Node {
+    fn pick_node(&self, node: &Node) -> Node {
         let mut rng = rand::thread_rng();
         let number_of_nodes = self.count_nodes(node);
         let random_number: usize = (number_of_nodes as f64 * rng.gen::<f64>()).floor() as usize;
